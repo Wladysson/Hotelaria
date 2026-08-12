@@ -3,7 +3,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
-from src.models.transaction import PaymentProvider
+from src.models.transactions import PaymentProvider
 
 
 class PaymentCreate(BaseModel):
