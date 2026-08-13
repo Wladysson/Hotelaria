@@ -37,7 +37,7 @@ apps/
         │           ├── __init__.py
         │           ├── router.py
         │           ├── auth.py
-        │           └── usuarios.py
+        │           └── usuarios.py 
         │
         ├── alembic/
         │   ├── versions/
@@ -46,7 +46,7 @@ apps/
         │   ├── script.py.mako
         │   └── README
         │
-        ├── tests/
+        ├── tests/ estamos aqui
         │   ├── __init__.py
         │   ├── conftest.py
         │   ├── api/
