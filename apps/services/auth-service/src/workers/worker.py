@@ -1,56 +1,57 @@
 import asyncio
 import logging
 
-from shared.messaging.rabbitmq_client import RabbitMQClient
+from src.workers.tasks.cleanup import (
+    cleanup_expired_sessions,
+)
+from src.workers.tasks.security import (
+    process_security_tasks,
+)
 
-logger = logging.getLogger(__name__)
+
+logger = logging.getLogger(
+    "auth-service.worker"
+)
 
 
-class AuthWorker:
+async def run_worker() -> None:
+    logger.info(
+        "Auth worker started"
+    )
 
-    def __init__(self, rabbitmq: RabbitMQClient):
-        self.rabbitmq = rabbitmq
+    while True:
+        try:
+            await cleanup_expired_sessions()
 
-    async def start(self) -> None:
-        logger.info("Starting auth-service worker")
+            await process_security_tasks()
 
-        await self.rabbitmq.connect()
+        except asyncio.CancelledError:
+            logger.info(
+                "Auth worker shutdown requested"
+            )
 
-        await self.rabbitmq.consume(
-            queue="auth-service",
-            callback=self.handle_message,
+            raise
+
+        except Exception:
+            logger.exception(
+                "Unexpected error in auth worker"
+            )
+
+        await asyncio.sleep(
+            60
         )
 
-    async def handle_message(self, message: dict) -> None:
-        event_name = message.get("event_name")
 
-        logger.info(
-            "Received auth-service event: %s",
-            event_name,
-        )
-
-        # Eventos específicos serão registrados conforme
-        # os casos de uso assíncronos do serviço forem implementados.
-
-    async def stop(self) -> None:
-        logger.info("Stopping auth-service worker")
-
-        await self.rabbitmq.close()
-
-
-async def run_worker(rabbitmq: RabbitMQClient) -> None:
-    worker = AuthWorker(rabbitmq)
-
+def main() -> None:
     try:
-        await worker.start()
+        asyncio.run(
+            run_worker()
+        )
+    except KeyboardInterrupt:
+        logger.info(
+            "Auth worker stopped"
+        )
 
-    except asyncio.CancelledError:
-        logger.info("Auth-service worker cancelled")
-        raise
 
-    except Exception:
-        logger.exception("Auth-service worker stopped unexpectedly")
-        raise
-
-    finally:
-        await worker.stop()
+if __name__ == "__main__":
+    main()

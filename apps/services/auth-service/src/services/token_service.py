@@ -1,76 +1,215 @@
-from fastapi import HTTPException, status
+from datetime import datetime
+from uuid import UUID
 
 from src.core.jwt import (
+    JWTError,
+    TokenType,
     create_access_token,
+    create_email_verification_token,
+    create_password_reset_token,
     create_refresh_token,
     decode_token,
+    get_token_jti,
+    get_token_subject,
+    get_token_type,
 )
-from src.schemas.token import TokenResponse
+from src.models.user import User
+from src.schemas.token import (
+    AccessTokenResponse,
+    AuthenticationResponse,
+)
 
 
 class TokenService:
 
-    def create_tokens(
+    def create_access_token(
         self,
-        user_id: str,
-        email: str,
-        roles: list[str],
-    ) -> TokenResponse:
-        claims = {
-            "email": email,
-            "roles": roles,
-        }
+        user: User,
+    ) -> tuple[str, str, datetime]:
+        roles = [
+            role.name
+            for role in user.roles
+            if role.is_active
+        ]
 
-        access_token = create_access_token(
-            subject=user_id,
-            claims=claims,
+        permissions = sorted(
+            {
+                permission.name
+                for role in user.roles
+                if role.is_active
+                for permission in role.permissions
+                if permission.is_active
+            }
         )
 
-        refresh_token = create_refresh_token(
-            subject=user_id,
+        return create_access_token(
+            user.id,
+            roles=roles,
+            permissions=permissions,
         )
 
-        return TokenResponse(
+    def create_refresh_token(
+        self,
+        user: User,
+    ) -> tuple[str, str, datetime]:
+        return create_refresh_token(
+            user.id
+        )
+
+    def create_authentication_tokens(
+        self,
+        user: User,
+    ) -> AuthenticationResponse:
+        access_token, _, access_expires_at = (
+            self.create_access_token(user)
+        )
+
+        refresh_token, _, refresh_expires_at = (
+            self.create_refresh_token(user)
+        )
+
+        now = datetime.now(
+            access_expires_at.tzinfo
+        )
+
+        return AuthenticationResponse(
             access_token=access_token,
             refresh_token=refresh_token,
-            expires_in=900,
+            token_type="bearer",
+            expires_in=max(
+                int(
+                    (
+                        access_expires_at - now
+                    ).total_seconds()
+                ),
+                0,
+            ),
+            refresh_expires_in=max(
+                int(
+                    (
+                        refresh_expires_at - now
+                    ).total_seconds()
+                ),
+                0,
+            ),
         )
 
-    def refresh_access_token(
+    def create_password_reset_token(
         self,
-        refresh_token: str,
-    ) -> TokenResponse:
+        user: User,
+    ) -> tuple[str, str, datetime]:
+        return create_password_reset_token(
+            user.id
+        )
+
+    def create_email_verification_token(
+        self,
+        user: User,
+    ) -> tuple[str, str, datetime]:
+        return create_email_verification_token(
+            user.id
+        )
+
+    def validate_access_token(
+        self,
+        token: str,
+    ) -> UUID:
+        payload = self._decode_and_validate_type(
+            token,
+            TokenType.ACCESS,
+        )
+
+        return self._extract_subject(
+            payload
+        )
+
+    def validate_refresh_token(
+        self,
+        token: str,
+    ) -> UUID:
+        payload = self._decode_and_validate_type(
+            token,
+            TokenType.REFRESH,
+        )
+
+        return self._extract_subject(
+            payload
+        )
+
+    def validate_password_reset_token(
+        self,
+        token: str,
+    ) -> UUID:
+        payload = self._decode_and_validate_type(
+            token,
+            TokenType.PASSWORD_RESET,
+        )
+
+        return self._extract_subject(
+            payload
+        )
+
+    def validate_email_verification_token(
+        self,
+        token: str,
+    ) -> UUID:
+        payload = self._decode_and_validate_type(
+            token,
+            TokenType.EMAIL_VERIFICATION,
+        )
+
+        return self._extract_subject(
+            payload
+        )
+
+    def get_jti(
+        self,
+        token: str,
+    ) -> str:
         try:
-            payload = decode_token(refresh_token)
-        except Exception:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid or expired refresh token",
-                headers={"WWW-Authenticate": "Bearer"},
+            return get_token_jti(token)
+        except JWTError:
+            raise
+
+    def get_token_type(
+        self,
+        token: str,
+    ) -> str:
+        return get_token_type(token)
+
+    def decode(
+        self,
+        token: str,
+    ) -> dict:
+        return decode_token(token)
+
+    def _decode_and_validate_type(
+        self,
+        token: str,
+        expected_type: str,
+    ) -> dict:
+        payload = decode_token(token)
+
+        if payload.get("type") != expected_type:
+            raise JWTError(
+                f"Token do tipo {expected_type} obrigatório."
             )
 
-        if payload.get("type") != "refresh":
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid refresh token",
-                headers={"WWW-Authenticate": "Bearer"},
+        return payload
+
+    @staticmethod
+    def _extract_subject(
+        payload: dict,
+    ) -> UUID:
+        try:
+            return UUID(
+                str(payload["sub"])
             )
-
-        subject = payload.get("sub")
-
-        if not subject:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid refresh token subject",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
-
-        access_token = create_access_token(
-            subject=subject,
-        )
-
-        return TokenResponse(
-            access_token=access_token,
-            refresh_token=refresh_token,
-            expires_in=900,
-        )
+        except (
+            KeyError,
+            TypeError,
+            ValueError,
+        ) as exc:
+            raise JWTError(
+                "Subject do token inválido."
+            ) from exc

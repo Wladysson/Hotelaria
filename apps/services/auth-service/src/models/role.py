@@ -1,14 +1,10 @@
 from uuid import UUID
 
-from sqlalchemy import String, Table, Column, ForeignKey
+from sqlalchemy import ForeignKey, String, Table, Column
 from sqlalchemy.dialects.postgresql import UUID as PostgreSQLUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.models.base import (
-    Base,
-    TimestampMixin,
-    UUIDPrimaryKeyMixin,
-)
+from src.models.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
 
 
 user_roles = Table(
@@ -17,19 +13,13 @@ user_roles = Table(
     Column(
         "user_id",
         PostgreSQLUUID(as_uuid=True),
-        ForeignKey(
-            "users.id",
-            ondelete="CASCADE",
-        ),
+        ForeignKey("users.id", ondelete="CASCADE"),
         primary_key=True,
     ),
     Column(
         "role_id",
         PostgreSQLUUID(as_uuid=True),
-        ForeignKey(
-            "roles.id",
-            ondelete="CASCADE",
-        ),
+        ForeignKey("roles.id", ondelete="CASCADE"),
         primary_key=True,
     ),
 )
@@ -41,19 +31,13 @@ role_permissions = Table(
     Column(
         "role_id",
         PostgreSQLUUID(as_uuid=True),
-        ForeignKey(
-            "roles.id",
-            ondelete="CASCADE",
-        ),
+        ForeignKey("roles.id", ondelete="CASCADE"),
         primary_key=True,
     ),
     Column(
         "permission_id",
         PostgreSQLUUID(as_uuid=True),
-        ForeignKey(
-            "permissions.id",
-            ondelete="CASCADE",
-        ),
+        ForeignKey("permissions.id", ondelete="CASCADE"),
         primary_key=True,
     ),
 )
@@ -67,7 +51,7 @@ class Role(
     __tablename__ = "roles"
 
     name: Mapped[str] = mapped_column(
-        String(50),
+        String(100),
         unique=True,
         nullable=False,
         index=True,
@@ -78,14 +62,21 @@ class Role(
         nullable=True,
     )
 
-    users: Mapped[list["User"]] = relationship(
+    is_active: Mapped[bool] = mapped_column(
+        default=True,
+        nullable=False,
+    )
+
+    users = relationship(
         "User",
         secondary=user_roles,
         back_populates="roles",
+        lazy="selectin",
     )
 
-    permissions: Mapped[list["Permission"]] = relationship(
+    permissions = relationship(
         "Permission",
         secondary=role_permissions,
         back_populates="roles",
+        lazy="selectin",
     )

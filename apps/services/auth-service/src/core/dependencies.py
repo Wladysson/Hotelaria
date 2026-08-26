@@ -1,55 +1,125 @@
-from collections.abc import AsyncGenerator
+from typing import Annotated
 
-import jwt
 from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.core.database import async_session
-from src.core.jwt import decode_token
+from src.core.database import get_db
+from src.core.jwt import (
+    JWTError,
+    TokenType,
+    decode_token,
+    get_token_subject,
+    get_token_type,
+)
+from src.core.security import oauth2_scheme
+from src.repositories.user_repository import UserRepository
 
 
-bearer_scheme = HTTPBearer(auto_error=False)
+DBSession = Annotated[
+    AsyncSession,
+    Depends(get_db),
+]
 
 
-async def get_db() -> AsyncGenerator[AsyncSession, None]:
-    async with async_session() as session:
-        yield session
-
-
-async def get_current_user_id(
-    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
-) -> str:
-    if credentials is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication required",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
+async def get_current_user(
+    token: Annotated[str, Depends(oauth2_scheme)],
+    db: DBSession,
+):
     try:
-        payload = decode_token(credentials.credentials)
-    except jwt.InvalidTokenError:
+        payload = decode_token(token)
+
+        if payload.get("type") != TokenType.ACCESS:
+            raise JWTError("Token de acesso obrigatório.")
+
+        user_id = get_token_subject(token)
+
+    except JWTError as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired token",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+            detail=str(exc),
+            headers={
+                "WWW-Authenticate": "Bearer",
+            },
+        ) from exc
 
-    if payload.get("type") != "access":
+    repository = UserRepository(db)
+
+    user = await repository.get_by_id_with_authorization(
+        user_id
+    )
+
+    if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid access token",
-            headers={"WWW-Authenticate": "Bearer"},
+            detail="Usuário não encontrado.",
+            headers={
+                "WWW-Authenticate": "Bearer",
+            },
         )
 
-    subject = payload.get("sub")
-
-    if not subject:
+    if not user.is_active:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token subject",
-            headers={"WWW-Authenticate": "Bearer"},
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Usuário inativo.",
         )
 
-    return subject
+    return user
+
+
+CurrentUser = Annotated[
+    object,
+    Depends(get_current_user),
+]
+
+
+def require_roles(*required_roles: str):
+    async def dependency(
+        current_user: CurrentUser,
+    ):
+        user_roles = {
+            role.name
+            for role in current_user.roles
+        }
+
+        if not set(required_roles).issubset(user_roles):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Usuário não possui as roles necessárias.",
+            )
+
+        return current_user
+
+    return dependency
+
+
+def require_permissions(*required_permissions: str):
+    async def dependency(
+        current_user: CurrentUser,
+    ):
+        user_permissions = {
+            permission.name
+            for role in current_user.roles
+            for permission in role.permissions
+        }
+
+        if not set(required_permissions).issubset(
+            user_permissions
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Usuário não possui as permissões necessárias.",
+            )
+
+        return current_user
+
+    return dependency
+
+
+def require_superuser(current_user: CurrentUser):
+    if not current_user.is_superuser:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acesso restrito a administradores.",
+        )
+
+    return current_user
