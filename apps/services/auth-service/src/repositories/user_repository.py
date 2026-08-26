@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from src.models.user import User
-
+from src.models.role import Role
 
 class UserRepository:
 
@@ -42,7 +42,7 @@ class UserRepository:
             select(User)
             .options(
                 selectinload(User.roles)
-                .selectinload("permissions")
+                .selectinload(Role.permissions)
             )
             .where(User.id == user_id)
         )
@@ -97,7 +97,7 @@ class UserRepository:
             )
             .options(
                 selectinload(User.roles)
-                .selectinload("permissions")
+                .selectinload(Role.permissions)
             )
         )
 

@@ -6,7 +6,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     app_name: str = Field(
-        default="Bank Auth Service",
+        default="Auth Service",
         alias="APP_NAME",
     )
 
