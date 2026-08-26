@@ -1,0 +1,36 @@
+name: CI Hotel Service
+
+on:
+  push:
+    paths:
+      - 'apps/services/hotel-service/**'
+      - 'packages/shared/**'
+      - 'packages/contracts/**'
+
+  pull_request:
+    paths:
+      - 'apps/services/hotel-service/**'
+      - 'packages/shared/**'
+      - 'packages/contracts/**'
+
+jobs:
+  test:
+    name: Hotel Service
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Pipeline Test
+        run: |
+          echo "Hotel Service pipeline executada com sucesso."
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Hotel Service" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Verificação | Resultado |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Pipeline acionada | PASS |" >> "$GITHUB_STEP_SUMMARY"
