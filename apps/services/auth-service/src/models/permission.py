@@ -1,29 +1,19 @@
-from sqlalchemy import ForeignKey, String, Table, Column
-from sqlalchemy.dialects.postgresql import UUID as PostgreSQLUUID
+from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.models.base import Base, UUIDModel
-
-
-role_permissions = Table(
-    "role_permissions",
-    Base.metadata,
-    Column(
-        "role_id",
-        PostgreSQLUUID(as_uuid=True),
-        ForeignKey("roles.id", ondelete="CASCADE"),
-        primary_key=True,
-    ),
-    Column(
-        "permission_id",
-        PostgreSQLUUID(as_uuid=True),
-        ForeignKey("permissions.id", ondelete="CASCADE"),
-        primary_key=True,
-    ),
+from src.models.base import (
+    Base,
+    TimestampMixin,
+    UUIDPrimaryKeyMixin,
 )
+from src.models.role import role_permissions
 
 
-class Permission(UUIDModel, Base):
+class Permission(
+    UUIDPrimaryKeyMixin,
+    TimestampMixin,
+    Base,
+):
     __tablename__ = "permissions"
 
     name: Mapped[str] = mapped_column(
@@ -38,12 +28,8 @@ class Permission(UUIDModel, Base):
         nullable=True,
     )
 
-    resource: Mapped[str] = mapped_column(
-        String(50),
-        nullable=False,
-    )
-
-    action: Mapped[str] = mapped_column(
-        String(50),
-        nullable=False,
+    roles: Mapped[list["Role"]] = relationship(
+        "Role",
+        secondary=role_permissions,
+        back_populates="permissions",
     )

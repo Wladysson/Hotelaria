@@ -10,7 +10,7 @@ class Base(DeclarativeBase):
     pass
 
 
-class UUIDModel:
+class UUIDPrimaryKeyMixin:
     id: Mapped[UUID] = mapped_column(
         PostgreSQLUUID(as_uuid=True),
         primary_key=True,
@@ -18,7 +18,7 @@ class UUIDModel:
     )
 
 
-class TimestampModel:
+class TimestampMixin:
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
