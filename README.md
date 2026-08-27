@@ -141,9 +141,3 @@ PAREI AQUI, LOGO MAIS CONTINUAMOS
 # Infraestrutura 
 
 
-
-<<<<<<< HEAD
-=======
-Plano de ensino, arquitetura, roadmap das sprints e guias de instalação:
-https://github.com/prof-ronildo-unicatolica/estagio-desenvolvimento-web
->>>>>>> origin/main
