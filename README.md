@@ -6,6 +6,18 @@
   Sistema baseado em Arquitetura de microsservices com foco em escalabilidade e performace para uma franquia de hotéis que atua em múltiplas cidades.
 </p><br>
 
+<p align="center">
+  <img src="./docs/imagens/fig/Python.png" width="55" alt="Ubuntu"/>
+  <img src="./docs/imagens/fig/JavaScript.png" width="55" alt="NGINX"/>
+  <img src="./docs/imagens/fig/PostgresSQL.png" width="55" alt="Java">
+  <img src="./docs/imagens/fig/MongoDB.png" width="55" alt="Quarkus"/>
+  <img src="./docs/imagens/fig/RabbitMQ.png" width="55" alt="Terraform"/>
+  <img src="./docs/imagens/fig/Redis.png" width="55" alt="Apache Kafka"/>
+  <img src="./docs/imagens/fig/Prometheus.png" width="55" alt="Kubernetes"/>
+  <img src="./docs/imagens/fig/Grafana.png" width="55" alt="Argo CD"/>
+  <img src="./docs/imagens/fig/Docker.png" width="55" alt="Argo CD"/>
+  <img src="./docs/imagens/fig/GitHub Actions.png" width="55" alt="Argo CD"/>
+</p>
 
 > **Documentação viva:** esta documentação encontra-se em evolução contínua e pode sofrer alterações conforme novos serviços, componentes, arquiteturas e capacidades são implementados.
 
@@ -42,9 +54,9 @@ No momento inicial da plataforma serao desenvolvidos 6 serviços, onde ficaram r
 
 ### Camadas da Arquitetura
 
-A plataforma segue uma arquitetura separando responsabilidades para garantir escalabilidade, manutenibilidade e testabilidade.
+A plataforma segue uma arquitetura separando responsabilidades para garantir escalabilidade, manutenabilidade e testabilidade.
 
-![Ainda vou colocar a imagem](./docs/arquitetura.png)
+![Ainda vou colocar a imagem](./docs/principal/principal.png)
 
 
 ---
@@ -55,7 +67,7 @@ A plataforma é organizada onde cada serviços trabalha em suas respectivas port
 
 | Docs do Serviço | Responsabilidade | Banco | Porta API |
 | :--- | :--- | :--- | :--- |
-| [`auth-service`](./auth-service) | Autenticação, autorização, gestão de usuários e roles | PostgreSQL | `8081` |
+| [`auth-service`](./apps/services/auth-service/README.md) | Autenticação, autorização, gestão de usuários e roles | PostgreSQL | `8081` |
 | [`hotel-service`](./hotel-service) | Catálogo de hotéis, quartos, cidades, comodidades | PostgreSQL | `8082` |
 | [`reservation-service`](./reservation-service) | Gestão de reservas, disponibilidade, precificação, sagas | PostgreSQL | `8083` |
 | [`payment-service`](./payment-service) | Processamento de pagamentos, reembolsos, gateways | PostgreSQL | `8084` |
