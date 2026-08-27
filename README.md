@@ -1,78 +1,132 @@
-# Estágio II em Desenvolvimento Web — Turma B · Equipe Alfa
+<p align="center">
+  <strong>Sistema de Rede Hoteleira Distribuida</strong>
+</p>
 
-Repositório oficial da equipe **Alfa** (Turma B) na disciplina de **Estágio II em
-Desenvolvimento Web** — 2026.2.
+<p align="center">
+  Sistema baseado em Arquitetura de microsservices com foco em escalabilidade e performace para uma franquia de hotéis que atua em múltiplas cidades.
+</p><br>
 
-## Integrantes
 
-- Wladyson Araújo Rodrigues
-- Pedro Henrique Holanda de Oliveira Bezerra
-- Kelton dos Santos Oliveira
-- Levi Marques Waterloo
-- Iara Barros Ferreira
+> **Documentação viva:** esta documentação encontra-se em evolução contínua e pode sofrer alterações conforme novos serviços, componentes, arquiteturas e capacidades são implementados.
 
-## Começando
 
-Este repositório **já vem com o projeto-base pronto**: backend em FastAPI, frontend em
-React e toda a infraestrutura (PostgreSQL, MongoDB, RabbitMQ) em Docker. Você não
-precisa criar a estrutura do zero — seu trabalho é evoluí-la a cada sprint.
+---
 
-Para colocar tudo no ar:
+## 📖 Visão Geral
 
-```bash
-# 1. Clone o repositório (o clone já cai na branch develop)
-git clone <url-ssh-deste-repositorio>
-cd <pasta-do-repositorio>
+A Plataforma é um sistema integrado de reservas para redes hoteleiras, desenvolvido com arquitetura de microserviços event-driven em Python/FastAPI. A plataforma resolve os principais gargalos operacionais de franquias que atuam em múltiplas cidades, eliminando overbooking, centralizando dados e proporcionando uma experiência de reserva escalável e segura com baixo consumo de memoria.
 
-# 2. Suba a stack completa (a primeira vez demora alguns minutos)
-docker compose up -d --build
 
-# 3. Confirme que a API respondeu
-curl http://localhost:8000/health
-```
 
-| Serviço | Endereço |
+No momento inicial da plataforma serao desenvolvidos 6 serviços, onde ficaram responsaveis desde a autenticaçao ate sua auditoria.
+
+
+
+## 🏗️ Principios de Arquitetura
+| Princípio                                       | Descrição                                                                                                          | Implementação na Plataforma                                                                                         |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
+| Domain-Driven Design (DDD)                      | Decomposição de serviços orientada a domínios de negócio (Auth, Hotel, Reservation, Payment, Notification, Audit). | 6 microserviços independentes, cada um com seu próprio banco de dados e responsabilidades claras.                   |
+| Independent Deployment                          | Cada serviço pode ser implantado, escalado e atualizado independentemente.                                         | Docker Compose para desenvolvimento local; Kubernetes para produção com deployments isolados por serviço.           |
+| Event-Driven Communication                      | Comunicação assíncrona baseada em eventos via RabbitMQ (Topic + Fanout exchanges).                                 | Todos os serviços publicam e consomem eventos (ex: RESERVA_SOLICITADA, PAGAMENTO_APROVADO).                         |
+| Transactional Outbox Pattern                    | Garantia de atomicidade entre escrita no banco e publicação de eventos.                                            | Tabela outbox_messages em cada serviço + worker relay para RabbitMQ.                                                |
+| Saga Orchestration                              | Coordenação de transações distribuídas com compensação em caso de falha.                                           | reservation-service como orchestrator da Saga de reserva (criação → pagamento → confirmação/cancelamento).          |
+| CQRS (Command Query Responsibility Segregation) | Separação entre modelos de escrita (PostgreSQL) e leitura (MongoDB + Redis).                                       | hotel-service: Write Model em PostgreSQL, Read Model (catálogo) em MongoDB com cache Redis.                         |
+| Resilience & Fault Isolation                    | Isolamento de falhas com padrões de resiliência (Retry, Dead Letter Queue, Circuit Breaker).                       | RabbitMQ com DLQ, retry com exponential backoff (3 tentativas), prefetch=1 para ordenação.                          |
+| Secure Service-to-Service                       | Comunicação segura entre serviços com autenticação JWT e RBAC.                                                     | JWT stateless com chaves RSA, validação de token no API Gateway e middleware de auth em cada serviço.               |
+| Automated CI/CD                                 | Pipelines de integração e entrega contínua com scanning de segurança de containers.                                | GitHub Actions: build, test, Trivy/Snyk scan, SBOM, push para ECR, deploy progressivo (dev → staging → production). |
+| Containerized Deployment                        | Implantação em containers Docker com orquestração via Docker Compose (dev) e Kubernetes (prod).                    | Cada serviço tem seu próprio Dockerfile multi-stage; imagens escaneadas antes do deploy.                            |
+| Polyglot Persistence                            | Uso de múltiplos bancos de dados especializados por domínio.                                                       | PostgreSQL (transacional), MongoDB (catálogo + auditoria), Redis (cache).                                           |
+| API Gateway Pattern                             | Gateway centralizado para roteamento, rate limiting, SSL termination e autenticação.                               | Nginx como API Gateway com plugins de auth, rate limiting e logging.|
+
+
+
+### Camadas da Arquitetura
+
+A plataforma segue uma arquitetura separando responsabilidades para garantir escalabilidade, manutenibilidade e testabilidade.
+
+![Ainda vou colocar a imagem](./docs/arquitetura.png)
+
+
+---
+
+## 📦 Microserviços
+
+A plataforma é organizada onde cada serviços trabalha em suas respectivas portas, pensando em padrao de arquitetura e documentaçao das APIs.
+
+| Docs do Serviço | Responsabilidade | Banco | Porta API |
+| :--- | :--- | :--- | :--- |
+| [`auth-service`](./auth-service) | Autenticação, autorização, gestão de usuários e roles | PostgreSQL | `8081` |
+| [`hotel-service`](./hotel-service) | Catálogo de hotéis, quartos, cidades, comodidades | PostgreSQL | `8082` |
+| [`reservation-service`](./reservation-service) | Gestão de reservas, disponibilidade, precificação, sagas | PostgreSQL | `8083` |
+| [`payment-service`](./payment-service) | Processamento de pagamentos, reembolsos, gateways | PostgreSQL | `8084` |
+| [`notification-service`](./notification-service) | E-mails, SMS, push notifications, templates | PostgreSQL | `8085` |
+| [`audit-service`](./audit-service) | Trilha de auditoria imutável, logs de segurança, compliance | MongoDB | `8086` |
+
+
+
+## Front e Mensageria
+
+| Outros Serviços | Endereços |
 | :--- | :--- |
 | Frontend | http://localhost:5173 |
-| API + Swagger | http://localhost:8000/docs |
 | Painel do RabbitMQ | http://localhost:15672 |
 
-📖 **Passo a passo completo** — pré-requisitos de instalação, como rodar o backend fora
-do Docker, o que já vem pronto e solução de problemas comuns:
-[**Guia de Primeiros Passos**](https://github.com/prof-ronildo-unicatolica/estagio-desenvolvimento-web/blob/main/docs/04_guias_tutoriais/guia_primeiros_passos.md)
 
-## Fluxo de trabalho
+---
 
-A branch padrão do repositório é a **`develop`** — é nela que o trabalho da equipe
-acontece. A `main` é reservada para versões estáveis e **não** recebe commits diretos.
 
-**Regras:**
+# 🧭 Arquitetura, Fluxos e Diagramas da Plataforma
 
-1. Trabalhe sempre a partir da `develop`, e nunca faça commit direto nela.
-2. Crie sua branch **a partir da `develop`**, com nome descritivo
-   (ex: `feature/cadastro-hospede`, `fix/validacao-cpf`).
-3. Abra o **Pull Request sempre com destino à `develop`** — nunca para a `main`.
-4. O PR precisa da revisão de pelo menos um colega antes do merge.
+Esta seção apresenta os principais fluxos, componentes e decisões arquiteturais implementados na plataforma até o momento.
+As imagens abaixo representam diferentes estágios de desenvolvimento e teste e destinam-se a fornecer evidência visual da plataforma operando com sucesso.
 
-Revisar os Pull Requests dos colegas também conta como contribuição avaliada.
+Os diagramas têm como objetivo facilitar a compreensão das interações entre serviços, infraestrutura e componentes da plataforma, servindo também como referência durante o desenvolvimento e evolução da arquitetura.
 
-```bash
-# 1. Garanta que sua develop local está atualizada
-git checkout develop
-git pull origin develop
+> A documentação é viva e pode ser atualizada continuamente a qualquer momento conforme novos serviços, integrações e componentes são implementados.
 
-# 2. Crie sua branch a partir da develop
-git checkout -b feature/minha-tarefa
+> Os screenshots são intencionalmente apresentados como evidência de implementação em vez de estarem atrelados a uma categoria específica de documentação. No entanto, 
+cada serviço tem suas imagens e explicaçao em suas devidas configurações.
 
-# 3. Trabalhe, comite e envie
-git add .
-git commit -m "feat: descreve o que foi feito"
-git push -u origin feature/minha-tarefa
+> Nota: Os padrões apresentados nesta seção representam apenas os principais conceitos arquiteturais utilizados na plataforma. A documentação completa de cada domínio pode conter outros padrões e estratégias específicas. Para conhecer as demais implementações, consulte os links disponíveis nas respectivas seções e documentações dos seus respectivos serviços.
 
-# 4. Abra o Pull Request no GitHub com destino à branch develop
-```
+---
 
-## Documentação da disciplina
+# Padroes de Arquitetura de Software
 
-Plano de ensino, arquitetura, roadmap das sprints e guias de instalação:
-https://github.com/prof-ronildo-unicatolica/estagio-desenvolvimento-web
+#### Principal Logica da Arquitetura SAGA ORQUESTRADA
+
+No sistemas contamos com SAGA Orchestrator, onde ele atua como coordenador central da Saga. Ele não executa diretamente as regras de negócio dos serviços participantes, sua responsabilidade é controlar a sequência de execução, acompanhar os resultados e determinar a próxima etapa do processo.
+
+Essa abordagem permite que cada serviço permaneça responsável pelo seu próprio domínio, enquanto o Orchestrator mantém o controle do fluxo distribuído.
+
+![Arquitetura do Sistema](./docs/diagrams/sagapricipal.png)
+
+#### Diagrama do Tratamento dos Dados para Reserva Aprovada
+![Arquitetura do Sistema](./docs/diagrams/saga%20aprovada.png)
+
+#### Diagrama do Tratamento dos Dados para Reserva Recusada
+![Arquitetura do Sistema](./docs/diagrams/safa%20recusada.png)
+
+PAREI AQUI, LOGO MAIS CONTINUAMOS
+
+# Mensageria e Comunicação
+
+
+---
+
+# Deploy e Conteiners
+
+
+---
+
+# Modelagem de Bnaco de Dados
+
+
+
+---
+
+
+# Infraestrutura 
+
+
+
