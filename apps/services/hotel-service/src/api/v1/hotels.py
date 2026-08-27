@@ -8,7 +8,7 @@ from src.schemas.hotel import (
     HotelResponse,
     HotelUpdate,
 )
-from src.services.hotel_service import HotelService
+from src.services.hotel_services import HotelService
 
 router = APIRouter(
     prefix="/hotels",
