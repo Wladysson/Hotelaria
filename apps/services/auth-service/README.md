@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 ![APIs do Sistema](../../../docs/imagens/apis/login1.png)
 ![APIs do Sistema](../../../docs/imagens/apis/login2.png)
 ![APIs do Sistema](../../../docs/imagens/apis/login3.png)
@@ -35,8 +34,4 @@ Serviço responsável pela autenticação, identidade e autorização da platafo
 
 ## Execução local
 
-Instalar dependências:
 
-```bash
-poetry install
->>>>>>> origin/main
