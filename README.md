@@ -68,7 +68,7 @@ A plataforma é organizada onde cada serviços trabalha em suas respectivas port
 | Docs do Serviço | Responsabilidade | Banco | Porta API |
 | :--- | :--- | :--- | :--- |
 | [`auth-service`](./apps/services/auth-service/README.md) | Autenticação, autorização, gestão de usuários e roles | PostgreSQL | `8081` |
-| [`hotel-service`](./hotel-service) | Catálogo de hotéis, quartos, cidades, comodidades | PostgreSQL | `8082` |
+| [`hotel-service`](./apps/services/hotel-service/README.md) | Catálogo de hotéis, quartos, cidades, comodidades | PostgreSQL | `8082` |
 | [`reservation-service`](./reservation-service) | Gestão de reservas, disponibilidade, precificação, sagas | PostgreSQL | `8083` |
 | [`payment-service`](./payment-service) | Processamento de pagamentos, reembolsos, gateways | PostgreSQL | `8084` |
 | [`notification-service`](./notification-service) | E-mails, SMS, push notifications, templates | PostgreSQL | `8085` |
