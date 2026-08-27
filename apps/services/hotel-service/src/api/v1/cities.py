@@ -2,7 +2,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from src.api.deps import get_city_repository
+from src.core.dependencies import get_city_repository
 from src.repositories.city_repository import CityRepository
 from src.schemas.city import (
     CityCreate,

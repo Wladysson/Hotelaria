@@ -1,3 +1,4 @@
+from typing import List
 from uuid import UUID
 
 from sqlalchemy import func, select
@@ -96,7 +97,7 @@ class HotelRepository:
         is_active: bool | None = True,
         min_rating: int | None = None,
         max_rating: int | None = None,
-    ) -> tuple[list[Hotel], int]:
+    ) -> tuple[List[Hotel], int]:
         offset = (page - 1) * page_size
 
         filters = []
@@ -145,7 +146,9 @@ class HotelRepository:
 
         result = await self.session.execute(statement)
 
-        return list(result.scalars().all()), total
+        hotels = result.scalars().all()
+
+        return list(hotels), total
 
     async def list_by_city(
         self,
@@ -153,7 +156,7 @@ class HotelRepository:
         page: int = 1,
         page_size: int = 20,
         is_active: bool = True,
-    ) -> tuple[list[Hotel], int]:
+    ) -> tuple[List[Hotel], int]:
         return await self.list(
             page=page,
             page_size=page_size,
@@ -203,7 +206,10 @@ class HotelRepository:
     ) -> City | None:
         statement = (
             select(City)
-            .join(Hotel, Hotel.city_id == City.id)
+            .join(
+                Hotel,
+                Hotel.city_id == City.id,
+            )
             .where(Hotel.id == hotel_id)
         )
 

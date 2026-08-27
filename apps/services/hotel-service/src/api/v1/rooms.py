@@ -8,7 +8,7 @@ from src.schemas.room import (
     RoomResponse,
     RoomUpdate,
 )
-from src.services.room_services import RoomService
+from src.services.room_service import RoomService
 from src.core.dependencies import get_room_service
 
 

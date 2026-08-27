@@ -2,13 +2,13 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from src.api.deps import get_hotel_service
+from src.core.dependencies import get_hotel_service
 from src.schemas.hotel import (
     HotelCreate,
     HotelResponse,
     HotelUpdate,
 )
-from src.services.hotel_services import HotelService
+from src.services.hotel_service import HotelService
 
 router = APIRouter(
     prefix="/hotels",

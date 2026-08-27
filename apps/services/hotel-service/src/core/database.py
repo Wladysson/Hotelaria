@@ -56,6 +56,15 @@ async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
             raise
 
 
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
+    """
+    Alias compatível para injeção de dependência.
+    """
+
+    async for session in get_db_session():
+        yield session
+
+
 async def init_database() -> None:
     """
     Inicializa os metadados do banco.
