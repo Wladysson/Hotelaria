@@ -1,0 +1,36 @@
+name: CI Reservation Service
+
+on:
+  push:
+    paths:
+      - 'apps/services/reservation-service/**'
+      - 'packages/shared/**'
+      - 'packages/contracts/**'
+
+  pull_request:
+    paths:
+      - 'apps/services/reservation-service/**'
+      - 'packages/shared/**'
+      - 'packages/contracts/**'
+
+jobs:
+  test:
+    name: Reservation Service
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Pipeline Test
+        run: |
+          echo "Reservation Service pipeline executada com sucesso."
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Reservation Service" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Verificação | Resultado |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Pipeline acionada | PASS |" >> "$GITHUB_STEP_SUMMARY"

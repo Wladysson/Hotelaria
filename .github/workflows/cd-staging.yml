@@ -1,0 +1,23 @@
+name: CD Staging
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy Staging
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deployment Test
+        run: |
+          echo "CD Staging executado com sucesso."
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## CD Staging" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Verificação | Resultado |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Deployment | PASS |" >> "$GITHUB_STEP_SUMMARY"

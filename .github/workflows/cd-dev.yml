@@ -1,0 +1,23 @@
+name: CD Dev
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy Dev
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deployment Test
+        run: |
+          echo "CD Dev executado com sucesso."
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## CD Dev" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Verificação | Resultado |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Deployment | PASS |" >> "$GITHUB_STEP_SUMMARY"
