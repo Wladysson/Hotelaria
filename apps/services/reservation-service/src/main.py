@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
+from src.core.cache import cache
 
 from fastapi import FastAPI, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -15,15 +16,13 @@ from src.core.database import (
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """
     Gerencia o ciclo de vida da aplicação.
-
-    O banco é validado durante o startup e o pool de conexões
-    é encerrado corretamente durante o shutdown.
     """
 
     await check_database_connection()
 
     yield
 
+    await cache.close()
     await close_database()
 
 
