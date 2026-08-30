@@ -17,19 +17,6 @@ class BookingSagaResult:
 
 
 class BookingSaga:
-    """
-    Orquestra o processo distribuído de criação de uma reserva.
-
-    Fluxo:
-
-    1. valida disponibilidade;
-    2. calcula o preço;
-    3. reserva o inventário;
-    4. retorna o estado da operação.
-
-    Em caso de falha, a operação deve ser compensada pelo
-    orchestrator responsável pela Saga.
-    """
 
     def __init__(
         self,
