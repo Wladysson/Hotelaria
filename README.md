@@ -1,12 +1,3 @@
-# Estágio II em Desenvolvimento Web — Turma B · Equipe Alfa
-
-Repositório oficial da equipe **Alfa** (Turma B) na disciplina de **Estágio II em
-Desenvolvimento Web** — 2026.2.
-
-[Acessar pasta de documentação do ronildo](./docs/ronildo/readme.md)
-
-⚠️OBS: Nessa arquitetura nao estamos mais utilizando o poetry e sim o pip via requirements.txt, por ser mais pratico, dar menos dor de cabeça e mantem a saude mental para ver se duramos ate o lançamento do GTA6 🤠
-
 <p align="center">
   <strong>Sistema de Rede Hoteleira Distribuida</strong>
 </p>
