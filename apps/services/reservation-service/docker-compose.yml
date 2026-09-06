@@ -1,0 +1,127 @@
+services:
+
+  postgres:
+    image: postgres:17-alpine
+    container_name: reservation-postgres
+
+    environment:
+      POSTGRES_DB: reservation
+      POSTGRES_USER: reservation
+      POSTGRES_PASSWORD: reservation
+
+    ports:
+      - "5439:5432"
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U reservation -d reservation"
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+    volumes:
+      - reservation-postgres-data:/var/lib/postgresql/data
+
+    networks:
+      - reservation
+
+
+  redis:
+    image: redis:7-alpine
+    container_name: reservation-redis
+
+    command:
+      [
+        "redis-server",
+        "--appendonly",
+        "yes"
+      ]
+
+    ports:
+      - "6381:6379"
+
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "redis-cli",
+          "ping"
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+    volumes:
+      - reservation-redis-data:/data
+
+    networks:
+      - reservation
+
+
+  reservation:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: reservation-service
+
+    environment:
+      ENVIRONMENT: development
+
+      DATABASE_URL: postgresql+asyncpg://reservation:reservation@postgres:5432/reservation
+
+      REDIS_URL: redis://redis:6379/0
+
+      JWT_SECRET_KEY: dev-secret-key-change-me
+      JWT_ALGORITHM: HS256
+
+      ACCESS_TOKEN_EXPIRE_MINUTES: 15
+      REFRESH_TOKEN_EXPIRE_DAYS: 7
+
+      CORS_ORIGINS: http://localhost:5173
+      CORS_ALLOW_CREDENTIALS: "true"
+      CORS_ALLOW_METHODS: GET,POST,PUT,PATCH,DELETE,OPTIONS
+      CORS_ALLOW_HEADERS: "*"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+    ports:
+      - "8001:8000"
+
+    command:
+      [
+        "uvicorn",
+        "src.main:app",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8000",
+        "--reload"
+      ]
+
+    volumes:
+      - ./src:/app/src
+      - ./tests:/app/tests
+      - ./alembic:/app/alembic
+
+    networks:
+      - reservation
+
+
+volumes:
+  reservation-postgres-data:
+  reservation-redis-data:
+
+
+networks:
+  reservation:
+    driver: bridge
+
